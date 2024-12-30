@@ -1,4 +1,5 @@
 import java.awt.*;
+import java.util.List;
 import javax.swing.*;
 
 public class MainFrame {
@@ -14,26 +15,45 @@ public class MainFrame {
             JLabel statusLabel = new JLabel("Tekan tombol untuk mulai tugas berat", JLabel.CENTER);
 
             // Progress bar
-            JProgressBar progressBar = new JProgressBar(0, 60);
+            JProgressBar progressBar = new JProgressBar(0, 100);
             progressBar.setValue(0);
             progressBar.setStringPainted(true);
 
             // Tombol aksi
             JButton startButton = new JButton("Mulai");
             startButton.addActionListener(e -> {
-                // Jalankan tugas berat di thread terpisah
-                new Thread(() -> {
-                    for (int i = 0; i <= 60; i++) {
-                        final int progress = i;
-                        SwingUtilities.invokeLater(() -> progressBar.setValue(progress));
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ex) {
-                            ex.printStackTrace();
+                startButton.setEnabled(false); // Nonaktifkan tombol saat proses berjalan
+                statusLabel.setText("Proses berjalan...");
+
+                // Buat SwingWorker untuk menangani tugas berat
+                SwingWorker<Void, Integer> worker = new SwingWorker<>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        // Simulasi tugas berat
+                        for (int i = 0; i <= 100; i++) {
+                            Thread.sleep(50); // Simulasi delay
+                            publish(i); // Perbarui progress
                         }
+                        return null;
                     }
-                    SwingUtilities.invokeLater(() -> statusLabel.setText("Tugas selesai!"));
-                }).start();
+
+                    @Override
+                    protected void process(List<Integer> chunks) {
+                        // Perbarui progress bar
+                        int latestProgress = chunks.get(chunks.size() - 1);
+                        progressBar.setValue(latestProgress);
+                    }
+
+                    @Override
+                    protected void done() {
+                        // Aksi setelah tugas selesai
+                        startButton.setEnabled(true);
+                        statusLabel.setText("Proses selesai!");
+                    }
+                };
+
+                // Jalankan SwingWorker
+                worker.execute();
             });
 
             // Tambahkan komponen ke frame
